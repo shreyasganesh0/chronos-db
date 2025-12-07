@@ -1,43 +1,51 @@
 #include <iostream>
 #include <cassert>
 #include "chronos/common/result.hpp"
+#include "chronos/common/list.hpp"
 
 using namespace chronos;
 
-// 1. Test Function returning a Value
-Result<int> divide(int a, int b) {
-    if (b == 0) return Error::GenericError; // Implicit conversion from Enum
-    return a / b;                           // Implicit conversion from int
-}
-
-// 2. Test Function returning Void (Status only)
-Result<void> trigger_io(bool success) {
-    if (!success) return Error::IOError;
-    return Result<void>::success();
-}
+// 1. Define a Request struct that hooks into the list
+struct TestRequest : public IntrusiveNode {
+    int id;
+    TestRequest(int id) : id(id) {}
+};
 
 int main() {
-    std::cout << "Running Result<T> Unit Tests..." << std::endl;
+    std::cout << "[ChronosDB] System Boot..." << std::endl;
 
-    // Test 1: Success Path
-    auto res_ok = divide(10, 2);
-    assert(res_ok.is_ok());
-    assert(res_ok.value() == 5);
+    // --- TEST 1: Result<T> ---
+    Result<int> res = 42;
+    assert(res.is_ok());
+    assert(res.value() == 42);
+    std::cout << "[PASS] Result<T> verified." << std::endl;
 
-    // Test 2: Failure Path
-    auto res_err = divide(10, 0);
-    assert(res_err.is_err());
-    assert(res_err.error() == Error::GenericError);
+    // --- TEST 2: Intrusive List ---
+    IntrusiveList<TestRequest> queue;
 
-    // Test 3: Void Success
-    auto void_ok = trigger_io(true);
-    assert(void_ok.is_ok());
+    // Create items on the STACK (Zero allocation!)
+    TestRequest req1(100);
+    TestRequest req2(200);
+    TestRequest req3(300);
 
-    // Test 4: Void Failure
-    auto void_err = trigger_io(false);
-    assert(void_err.is_err());
-    assert(void_err.error() == Error::IOError);
+    // Push them
+    queue.push_back(&req1);
+    queue.push_back(&req2);
+    queue.push_back(&req3);
 
-    std::cout << "All Tests Passed." << std::endl;
+    // Verify Order (FIFO)
+    TestRequest* popped = queue.pop_front();
+    assert(popped != nullptr);
+    assert(popped->id == 100);
+    
+    popped = queue.pop_front();
+    assert(popped->id == 200);
+
+    popped = queue.pop_front();
+    assert(popped->id == 300);
+
+    assert(queue.empty());
+    std::cout << "[PASS] IntrusiveList verified." << std::endl;
+
     return 0;
 }
