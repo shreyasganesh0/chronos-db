@@ -18,3 +18,21 @@
     - FIFO read from CQ head for ordered read in order of SQE
     - polling mode allows kernel to poll for entries in SQ instead 
     of having to call io_uring_enter() on each submission
+
+## Low Level Interface
+- Completion Queue Entry
+```
+struct io_uring_cqe {
+
+    __u64 user_data;
+    __s32 res;
+    __u32 flags;
+};
+```
+    - user_data is a field that is passed as is from whatever is added
+    to the sqe->user_data field
+        - could be used to tag particular requests since requests may not complete in the same order they were submitted
+        - usually done by passing a pointer that can be used to identify the type of request that was completed
+    - res field contains result of the system call
+        - read would contain number of bytes read in the res field or the error (basically whatever read would return)
+
