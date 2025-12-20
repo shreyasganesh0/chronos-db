@@ -36,3 +36,29 @@ struct io_uring_cqe {
     - res field contains result of the system call
         - read would contain number of bytes read in the res field or the error (basically whatever read would return)
 
+- Ordering can be fixed using linking requests as well
+
+- Submission Queue Entry
+```
+struct io_uring_sqe {
+    __u8 opcode; // type of operation for sqe
+    __u8 flags;
+    __u16 ioprio; // ioprio for request
+    __s32 fd; // file descriptor to do IO on
+    __u64 off; // offset into file
+    __u64 addr; // pointer to buffer or iovecs
+    __u32 len; // buffer size for iovecs
+    union {
+        __kernel_rwf_t rw_flags;
+        __u32 fsync_flags;
+        __u16 poll_events;
+        __u32 sync_range_flags;
+        __u32 msg_flags;
+    };
+    __u64 user_data; // data to be passed back at completition
+    union {
+        __u16 buf_index; // index into buffer if used
+        __u64 __pad2[3];
+    };
+};
+```
